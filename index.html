@@ -130,6 +130,54 @@
   .btn-ghost:hover{background:#EEF2F5;}
 
   /* CARDS */
+  .tech-grid{
+    display:grid;
+    gap:10px;
+  }
+  @media(max-width:760px){
+    .tech-grid{grid-template-columns:1fr !important;}
+  }
+  .tech-col{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:12px;
+    min-height:70px;
+  }
+  .tech-col-head{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:10px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--border);
+  }
+  .tech-col-head .avatar{width:26px;height:26px;font-size:11px;margin:0;}
+  .tech-col-head b{font-size:13.5px;}
+  .card-mini{
+    background:#fafbfc;
+    border:1px solid var(--border);
+    border-left:4px solid var(--pend);
+    border-radius:8px;
+    padding:10px;
+    margin-bottom:8px;
+    cursor:pointer;
+  }
+  .card-mini[data-estado="Terminado"]{border-left-color:var(--term);}
+  .cliente-name-mini{font-weight:700;font-size:13px;margin-bottom:3px;}
+  .actividad-mini{font-size:12.5px;color:var(--text);line-height:1.4;margin-bottom:8px;}
+  .add-mini-btn{
+    width:100%;
+    background:none;
+    border:1px dashed var(--border);
+    border-radius:8px;
+    padding:7px;
+    font-size:12px;
+    color:var(--text-muted);
+    cursor:pointer;
+    font-family:var(--sans);
+  }
+  .add-mini-btn:hover{background:#F3F6F8;}
   .card{
     background:var(--surface);
     border:1px solid var(--border);
@@ -362,7 +410,7 @@
         </div>
         <button class="btn-primary" id="btn-add-hoy">+ Nueva tarea</button>
       </div>
-      <div id="hoy-list"></div>
+      <div class="tech-grid" id="hoy-grid"></div>
     </div>
 
     <!-- SEMANA VIEW -->
@@ -546,37 +594,41 @@
   function renderHoy(){
     document.getElementById('day-label').innerHTML = '<b>' + fmtLongDay(currentDay) + '</b>';
     const iso = fmtDateISO(currentDay);
-    const list = document.getElementById('hoy-list');
-    const tasks = data.tasks.filter(t=>t.fecha===iso);
-    if(tasks.length===0){
-      list.innerHTML = `<div class="empty-state"><div class="big">🗓️</div>Sin tareas cargadas para este día.</div>`;
-      return;
-    }
-    list.innerHTML = tasks.map(t=>taskCardHtml(t)).join('');
-    list.querySelectorAll('.card').forEach(card=>{
-      card.querySelector('.icon-btn.edit').addEventListener('click', ()=>openTaskModal(card.dataset.id));
+    const grid = document.getElementById('hoy-grid');
+    grid.style.gridTemplateColumns = `repeat(${data.tecnicos.length || 1}, 1fr)`;
+    grid.innerHTML = data.tecnicos.map(tec=>{
+      const tasks = data.tasks.filter(t=>t.fecha===iso && t.tecnico===tec);
+      return `
+      <div class="tech-col">
+        <div class="tech-col-head">
+          <div class="avatar" style="background:${avatarColor(tec)}">${initials(tec)}</div>
+          <b>${escapeHtml(tec)}</b>
+        </div>
+        <div class="tech-col-body">
+          ${tasks.length? tasks.map(t=>`
+            <div class="card-mini" data-id="${t.id}" data-estado="${t.estado}">
+              <div class="cliente-name-mini">${escapeHtml(t.cliente)}</div>
+              <div class="actividad-mini">${escapeHtml(t.actividad)}</div>
+              <button class="estado-btn" data-estado="${t.estado}">${t.estado}</button>
+            </div>`).join('') : '<div class="mini-empty">Sin tareas</div>'}
+          <button class="add-mini-btn" data-tecnico="${escapeHtml(tec)}">+ Agregar</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    grid.querySelectorAll('.card-mini').forEach(card=>{
+      card.addEventListener('click', ()=>openTaskModal(card.dataset.id));
       card.querySelector('.estado-btn').addEventListener('click', (e)=>{
+        e.stopPropagation();
         const nuevo = e.target.dataset.estado === 'Pendiente' ? 'Terminado' : 'Pendiente';
         updateEstado(card.dataset.id, nuevo);
       });
     });
-  }
-
-  function taskCardHtml(t){
-    return `
-    <div class="card" data-id="${t.id}" data-estado="${t.estado}">
-      <div class="avatar" style="background:${avatarColor(t.tecnico)}">${initials(t.tecnico)}</div>
-      <div class="card-body">
-        <div class="card-top">
-          <div class="tec-cliente"><span class="tec-name">${escapeHtml(t.tecnico)}</span><span class="cliente-name">${escapeHtml(t.cliente)}</span></div>
-        </div>
-        <div class="actividad">${escapeHtml(t.actividad)}</div>
-        <div class="card-footer">
-          <button class="estado-btn" data-estado="${t.estado}">${t.estado}</button>
-          <button class="icon-btn edit">Editar</button>
-        </div>
-      </div>
-    </div>`;
+    grid.querySelectorAll('.add-mini-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        openTaskModal(null, fmtDateISO(currentDay), btn.dataset.tecnico);
+      });
+    });
   }
 
   function renderSemana(){
@@ -627,7 +679,7 @@
     if(t){ t.estado = estado; saveData(); renderHoy(); renderSemana(); toast('Estado actualizado'); }
   }
 
-  function openTaskModal(id, presetDate){
+  function openTaskModal(id, presetDate, presetTecnico){
     editingId = id || null;
     populateTecnicoSelect();
     populateClientesList();
@@ -648,6 +700,7 @@
       document.getElementById('f-estado').value = 'Pendiente';
       document.getElementById('f-id').value = '';
       populateTecnicoSelect();
+      if(presetTecnico) document.getElementById('f-tecnico').value = presetTecnico;
     }
     document.getElementById('task-overlay').classList.add('open');
   }
