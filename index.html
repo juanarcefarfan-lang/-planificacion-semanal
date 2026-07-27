@@ -431,7 +431,15 @@
   const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
   const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
-  let data = { tasks: [], tecnicos: ['Hernán','Felipe','Sabino','Alain','Beto'] };
+  let data = { tasks: [
+    {id:'seed_1', fecha:'2026-07-27', tecnico:'Felipe', cliente:'Espacio Urbano', actividad:'Visita técnica en Viña del Mar para revisión en terreno.', estado:'Pendiente'},
+    {id:'seed_2', fecha:'2026-07-27', tecnico:'Sabino', cliente:'Mall Plaza', actividad:'Levantamiento para cotización de piola y soporte de PTZ para carro solar Duoc Plaza Norte.', estado:'Pendiente'},
+    {id:'seed_3', fecha:'2026-07-27', tecnico:'Alain', cliente:'Ripley', actividad:'Etiquetado de cableado en sala de monitoreo Ripley Plaza Sur.', estado:'Pendiente'},
+    {id:'seed_4', fecha:'2026-07-27', tecnico:'Beto', cliente:'Carozzi', actividad:'Lontue-1 CCTV baños nuevos', estado:'Pendiente'},
+    {id:'seed_5', fecha:'2026-07-28', tecnico:'Felipe', cliente:'Espacio Urbano', actividad:'Visita técnica en Los Andes para evaluación en terreno.', estado:'Pendiente'},
+    {id:'seed_6', fecha:'2026-07-28', tecnico:'Sabino', cliente:'Mall Plaza/Ripley', actividad:'Trabajo en las SAM de Plaza Norte / organización de cableado en sala de monitoreo Ripley Plaza Sur.', estado:'Pendiente'},
+    {id:'seed_7', fecha:'2026-07-28', tecnico:'Alain', cliente:'Ripley', actividad:'Finalizar etiquetado e iniciar organización de cableado en sala de monitoreo Ripley Plaza Sur.', estado:'Pendiente'}
+  ], tecnicos: ['Hernán','Felipe','Sabino','Alain','Beto'] };
   let currentDay = new Date();
   let currentWeekAnchor = new Date();
   let editingId = null;
