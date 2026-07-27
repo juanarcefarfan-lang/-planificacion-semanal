@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planificación Semanal — Técnicos</title>
+<style>
+  :root{
+    --bg:#F3F5F7;
+    --surface:#FFFFFF;
+    --navy:#16283D;
+    --navy-2:#1F3A56;
+    --accent:#2E74B5;
+    --text:#1C2733;
+    --text-muted:#66727D;
+    --border:#E1E6EB;
+    --pend:#E8A33D;
+    --proceso:#2E74B5;
+    --term:#3C9D6B;
+    --radius:10px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:var(--sans);
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:920px;margin:0 auto;padding:0 16px 60px;}
+
+  /* HEADER */
+  header{
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy-2) 100%);
+    color:#fff;
+    padding:22px 16px 18px;
+    margin-bottom:18px;
+  }
+  header .inner{max-width:920px;margin:0 auto;}
+  header .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:#9FC2E0;
+    margin-bottom:4px;
+  }
+  header h1{
+    margin:0 0 14px;
+    font-size:22px;
+    font-weight:700;
+    letter-spacing:-0.2px;
+  }
+  .view-toggle{
+    display:inline-flex;
+    background:rgba(255,255,255,0.08);
+    border-radius:999px;
+    padding:3px;
+    gap:2px;
+  }
+  .view-toggle button{
+    border:none;
+    background:transparent;
+    color:#CBD9E6;
+    padding:7px 18px;
+    border-radius:999px;
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:var(--sans);
+    transition:background .15s, color .15s;
+  }
+  .view-toggle button.active{
+    background:#fff;
+    color:var(--navy);
+  }
+
+  /* NAV ROW (fecha / semana) */
+  .nav-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:16px;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .nav-row .nav-left{display:flex;align-items:center;gap:8px;}
+  .nav-btn{
+    width:32px;height:32px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--text);
+    font-size:15px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .nav-btn:hover{background:#EEF2F5;}
+  .period-label{
+    font-family:var(--mono);
+    font-size:13.5px;
+    color:var(--text-muted);
+    min-width:200px;
+  }
+  .period-label b{color:var(--text);font-weight:600;}
+  .btn-primary{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:9px 16px;
+    border-radius:8px;
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:var(--sans);
+  }
+  .btn-primary:hover{background:#255f96;}
+  .btn-ghost{
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--text-muted);
+    padding:8px 14px;
+    border-radius:8px;
+    font-size:13px;
+    cursor:pointer;
+    font-family:var(--sans);
+  }
+  .btn-ghost:hover{background:#EEF2F5;}
+
+  /* CARDS */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:10px;
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    border-left:4px solid var(--pend);
+  }
+  .card[data-estado="En Proceso"]{border-left-color:var(--proceso);}
+  .card[data-estado="Terminado"]{border-left-color:var(--term);}
+  .avatar{
+    width:34px;height:34px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:700;font-size:13px;
+    flex-shrink:0;
+    margin-top:2px;
+  }
+  .card-body{flex:1;min-width:0;}
+  .card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:8px;
+    margin-bottom:3px;
+    flex-wrap:wrap;
+  }
+  .tec-cliente{font-size:14px;}
+  .tec-name{font-weight:700;}
+  .cliente-name{color:var(--text-muted);}
+  .cliente-name::before{content:"· ";}
+  .actividad{
+    font-size:13.5px;
+    color:var(--text);
+    line-height:1.4;
+    margin:2px 0 8px;
+  }
+  .card-footer{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  select.estado-select{
+    font-family:var(--sans);
+    font-size:12px;
+    font-weight:600;
+    border-radius:6px;
+    border:1px solid var(--border);
+    padding:4px 8px;
+    background:#fafbfc;
+    cursor:pointer;
+  }
+  .icon-btn{
+    background:none;border:none;cursor:pointer;
+    color:var(--text-muted);
+    font-size:13px;
+    padding:4px 6px;
+    border-radius:6px;
+  }
+  .icon-btn:hover{background:#EEF2F5;color:var(--text);}
+  .empty-state{
+    text-align:center;
+    padding:40px 20px;
+    color:var(--text-muted);
+    font-size:14px;
+  }
+  .empty-state .big{font-size:28px;margin-bottom:8px;}
+
+  /* SEMANA VIEW */
+  .week-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:10px;
+  }
+  @media(max-width:760px){
+    .week-grid{grid-template-columns:1fr;}
+  }
+  .day-col{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:10px;
+    min-height:80px;
+  }
+  .day-col-head{
+    font-family:var(--mono);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:var(--text-muted);
+    margin-bottom:8px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center;
+    cursor:pointer;
+  }
+  .day-col-head b{color:var(--text);font-family:var(--sans);font-size:12.5px;}
+  .mini-task{
+    display:flex;
+    gap:6px;
+    align-items:flex-start;
+    padding:6px 4px;
+    border-radius:6px;
+    font-size:12.5px;
+    cursor:pointer;
+  }
+  .mini-task:hover{background:#F3F6F8;}
+  .mini-dot{
+    width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;
+    background:var(--pend);
+  }
+  .mini-task[data-estado="En Proceso"] .mini-dot{background:var(--proceso);}
+  .mini-task[data-estado="Terminado"] .mini-dot{background:var(--term);}
+  .mini-empty{
+    font-size:12px;color:#A6B0B9;
+    padding:6px 4px;
+    font-style:italic;
+  }
+
+  /* MODAL */
+  .overlay{
+    position:fixed;inset:0;
+    background:rgba(22,40,61,0.45);
+    display:none;
+    align-items:flex-start;
+    justify-content:center;
+    padding:40px 16px;
+    z-index:50;
+    overflow-y:auto;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:#fff;
+    border-radius:14px;
+    width:100%;
+    max-width:440px;
+    padding:22px;
+  }
+  .modal h2{margin:0 0 16px;font-size:16px;}
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--text-muted);
+    margin-bottom:5px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+  }
+  .field input, .field select, .field textarea{
+    width:100%;
+    padding:9px 10px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    font-size:14px;
+    font-family:var(--sans);
+    background:#fafbfc;
+  }
+  .field textarea{resize:vertical;min-height:60px;}
+  .modal-actions{
+    display:flex;justify-content:flex-end;gap:8px;margin-top:18px;
+  }
+  .tec-chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .tec-chip{
+    display:flex;align-items:center;gap:6px;
+    background:#F3F5F7;border:1px solid var(--border);
+    border-radius:999px;padding:4px 10px 4px 6px;font-size:12.5px;
+  }
+  .tec-chip .avatar{width:18px;height:18px;font-size:9px;margin:0;}
+  .tec-chip button{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;padding:0;}
+  .settings-btn{
+    background:none;border:none;color:#CBD9E6;cursor:pointer;
+    font-size:12.5px;text-decoration:underline;padding:0;margin-top:10px;
+    font-family:var(--sans);
+  }
+  .loading{
+    text-align:center;padding:60px 20px;color:var(--text-muted);font-size:14px;
+  }
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;
+    font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60;
+  }
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <div class="eyebrow">Operación diaria</div>
+    <h1>Planificación Semanal — Técnicos</h1>
+    <div class="view-toggle">
+      <button id="tab-hoy" class="active">Hoy</button>
+      <button id="tab-semana">Semana</button>
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <div id="loading" class="loading">Cargando tablero…</div>
+
+  <div id="content" style="display:none;">
+    <!-- HOY VIEW -->
+    <div id="view-hoy">
+      <div class="nav-row">
+        <div class="nav-left">
+          <button class="nav-btn" id="day-prev">‹</button>
+          <div class="period-label" id="day-label"></div>
+          <button class="nav-btn" id="day-next">›</button>
+        </div>
+        <button class="btn-primary" id="btn-add-hoy">+ Nueva tarea</button>
+      </div>
+      <div id="hoy-list"></div>
+    </div>
+
+    <!-- SEMANA VIEW -->
+    <div id="view-semana" style="display:none;">
+      <div class="nav-row">
+        <div class="nav-left">
+          <button class="nav-btn" id="week-prev">‹</button>
+          <div class="period-label" id="week-label"></div>
+          <button class="nav-btn" id="week-next">›</button>
+        </div>
+        <button class="btn-primary" id="btn-add-semana">+ Nueva tarea</button>
+      </div>
+      <div class="week-grid" id="week-grid"></div>
+    </div>
+
+    <div style="text-align:center;">
+      <button class="settings-btn" id="btn-settings" style="color:var(--text-muted);">Gestionar técnicos</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAREA -->
+<div class="overlay" id="task-overlay">
+  <div class="modal">
+    <h2 id="task-modal-title">Nueva tarea</h2>
+    <form id="task-form">
+      <div class="field">
+        <label>Fecha</label>
+        <input type="date" id="f-fecha" required>
+      </div>
+      <div class="field">
+        <label>Técnico</label>
+        <select id="f-tecnico" required></select>
+      </div>
+      <div class="field">
+        <label>Cliente</label>
+        <input type="text" id="f-cliente" list="clientes-list" placeholder="Ej: Ripley Plaza Sur" required>
+        <datalist id="clientes-list"></datalist>
+      </div>
+      <div class="field">
+        <label>Actividad</label>
+        <textarea id="f-actividad" placeholder="Descripción breve de la tarea" required></textarea>
+      </div>
+      <div class="field">
+        <label>Estado</label>
+        <select id="f-estado">
+          <option>Pendiente</option>
+          <option>En Proceso</option>
+          <option>Terminado</option>
+        </select>
+      </div>
+      <input type="hidden" id="f-id">
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="btn-delete-task" style="display:none;color:#C0392B;border-color:#f0d5d0;">Eliminar</button>
+        <button type="button" class="btn-ghost" id="btn-cancel-task">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL TÉCNICOS -->
+<div class="overlay" id="tec-overlay">
+  <div class="modal">
+    <h2>Técnicos</h2>
+    <div class="tec-chip-row" id="tec-chip-list"></div>
+    <div class="field" style="margin-top:16px;">
+      <label>Agregar técnico</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="new-tec-name" placeholder="Nombre">
+        <button type="button" class="btn-primary" id="btn-add-tec">Agregar</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn-ghost" id="btn-close-tec">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'board-data';
+  const AVATAR_PALETTE = ['#2E74B5','#3C9D6B','#C0693D','#8E5FA8','#4A90A4','#B5762E','#5C7CBA','#A44A6B'];
+  const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  let data = { tasks: [], tecnicos: ['Hernán','Felipe','Sabino','Alain','Beto'] };
+  let currentDay = new Date();
+  let currentWeekAnchor = new Date();
+  let editingId = null;
+
+  function toast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 1800);
+  }
+
+  function fmtDateISO(d){
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function parseISO(s){
+    const [y,m,d] = s.split('-').map(Number);
+    return new Date(y, m-1, d);
+  }
+  function mondayOf(d){
+    const dt = new Date(d);
+    const day = dt.getDay(); // 0=domingo
+    const diff = (day===0? -6 : 1-day);
+    dt.setDate(dt.getDate()+diff);
+    dt.setHours(0,0,0,0);
+    return dt;
+  }
+  function fmtLongDay(d){
+    return DIAS[(d.getDay()+6)%7] + ' ' + d.getDate() + ' de ' + MESES[d.getMonth()];
+  }
+  function fmtWeekLabel(monday){
+    const friday = new Date(monday); friday.setDate(friday.getDate()+4);
+    if(monday.getMonth()===friday.getMonth()){
+      return 'Semana del ' + monday.getDate() + ' al ' + friday.getDate() + ' de ' + MESES[monday.getMonth()] + ' ' + monday.getFullYear();
+    }
+    return 'Semana del ' + monday.getDate() + ' ' + MESES[monday.getMonth()] + ' al ' + friday.getDate() + ' ' + MESES[friday.getMonth()] + ' ' + friday.getFullYear();
+  }
+  function avatarColor(name){
+    let hash=0;
+    for(let i=0;i<name.length;i++) hash = name.charCodeAt(i) + ((hash<<5)-hash);
+    return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+  }
+  function initials(name){
+    return name.trim().slice(0,2).toUpperCase();
+  }
+
+  async function loadData(){
+    try{
+      const res = await window.storage.get(STORAGE_KEY, true);
+      if(res && res.value){
+        const parsed = JSON.parse(res.value);
+        if(parsed.tasks) data.tasks = parsed.tasks;
+        if(parsed.tecnicos && parsed.tecnicos.length) data.tecnicos = parsed.tecnicos;
+      }
+    }catch(e){
+      // no existe aún, se usa el default
+    }
+  }
+  async function saveData(){
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(data), true);
+    }catch(e){
+      toast('No se pudo guardar. Intenta de nuevo.');
+    }
+  }
+
+  function populateTecnicoSelect(){
+    const sel = document.getElementById('f-tecnico');
+    sel.innerHTML = data.tecnicos.map(t=>`<option value="${t}">${t}</option>`).join('');
+  }
+  function populateClientesList(){
+    const clientes = {};
+    data.tasks.forEach(t=>{ clientes[t.cliente] = (clientes[t.cliente]||0)+1; });
+    const sorted = Object.keys(clientes).sort((a,b)=>clientes[b]-clientes[a]);
+    document.getElementById('clientes-list').innerHTML = sorted.map(c=>`<option value="${escapeHtml(c)}">`).join('');
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  function renderHoy(){
+    document.getElementById('day-label').innerHTML = '<b>' + fmtLongDay(currentDay) + '</b>';
+    const iso = fmtDateISO(currentDay);
+    const list = document.getElementById('hoy-list');
+    const tasks = data.tasks.filter(t=>t.fecha===iso);
+    if(tasks.length===0){
+      list.innerHTML = `<div class="empty-state"><div class="big">🗓️</div>Sin tareas cargadas para este día.</div>`;
+      return;
+    }
+    list.innerHTML = tasks.map(t=>taskCardHtml(t)).join('');
+    list.querySelectorAll('.card').forEach(card=>{
+      card.querySelector('.icon-btn.edit').addEventListener('click', ()=>openTaskModal(card.dataset.id));
+      card.querySelector('.estado-select').addEventListener('change', (e)=>{
+        updateEstado(card.dataset.id, e.target.value);
+      });
+    });
+  }
+
+  function taskCardHtml(t){
+    return `
+    <div class="card" data-id="${t.id}" data-estado="${t.estado}">
+      <div class="avatar" style="background:${avatarColor(t.tecnico)}">${initials(t.tecnico)}</div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="tec-cliente"><span class="tec-name">${escapeHtml(t.tecnico)}</span><span class="cliente-name">${escapeHtml(t.cliente)}</span></div>
+        </div>
+        <div class="actividad">${escapeHtml(t.actividad)}</div>
+        <div class="card-footer">
+          <select class="estado-select" data-estado="${t.estado}">
+            <option ${t.estado==='Pendiente'?'selected':''}>Pendiente</option>
+            <option ${t.estado==='En Proceso'?'selected':''}>En Proceso</option>
+            <option ${t.estado==='Terminado'?'selected':''}>Terminado</option>
+          </select>
+          <button class="icon-btn edit">Editar</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderSemana(){
+    const monday = mondayOf(currentWeekAnchor);
+    document.getElementById('week-label').innerHTML = '<b>' + fmtWeekLabel(monday) + '</b>';
+    const grid = document.getElementById('week-grid');
+    grid.innerHTML = '';
+    for(let i=0;i<5;i++){
+      const d = new Date(monday); d.setDate(d.getDate()+i);
+      const iso = fmtDateISO(d);
+      const dayTasks = data.tasks.filter(t=>t.fecha===iso);
+      const col = document.createElement('div');
+      col.className='day-col';
+      col.innerHTML = `
+        <div class="day-col-head" data-iso="${iso}">
+          <span>${DIAS[i]}</span><b>${d.getDate()}</b>
+        </div>
+        <div class="day-tasks">
+          ${dayTasks.length? dayTasks.map(t=>`
+            <div class="mini-task" data-estado="${t.estado}" data-id="${t.id}">
+              <div class="mini-dot"></div>
+              <div><b>${escapeHtml(t.tecnico)}</b> · ${escapeHtml(t.cliente)}</div>
+            </div>`).join('') : '<div class="mini-empty">Sin tareas</div>'}
+        </div>`;
+      col.querySelector('.day-col-head').addEventListener('click', ()=>{
+        currentDay = new Date(d);
+        setView('hoy');
+      });
+      col.querySelectorAll('.mini-task').forEach(mt=>{
+        mt.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          openTaskModal(mt.dataset.id);
+        });
+      });
+      grid.appendChild(col);
+    }
+  }
+
+  function updateEstado(id, estado){
+    const t = data.tasks.find(x=>x.id===id);
+    if(t){ t.estado = estado; saveData(); renderHoy(); toast('Estado actualizado'); }
+  }
+
+  function openTaskModal(id, presetDate){
+    editingId = id || null;
+    populateTecnicoSelect();
+    populateClientesList();
+    const form = document.getElementById('task-form');
+    document.getElementById('btn-delete-task').style.display = id ? 'inline-block' : 'none';
+    document.getElementById('task-modal-title').textContent = id ? 'Editar tarea' : 'Nueva tarea';
+    if(id){
+      const t = data.tasks.find(x=>x.id===id);
+      document.getElementById('f-fecha').value = t.fecha;
+      document.getElementById('f-tecnico').value = t.tecnico;
+      document.getElementById('f-cliente').value = t.cliente;
+      document.getElementById('f-actividad').value = t.actividad;
+      document.getElementById('f-estado').value = t.estado;
+      document.getElementById('f-id').value = t.id;
+    }else{
+      form.reset();
+      document.getElementById('f-fecha').value = presetDate || fmtDateISO(currentDay);
+      document.getElementById('f-estado').value = 'Pendiente';
+      document.getElementById('f-id').value = '';
+      populateTecnicoSelect();
+    }
+    document.getElementById('task-overlay').classList.add('open');
+  }
+  function closeTaskModal(){
+    document.getElementById('task-overlay').classList.remove('open');
+    editingId = null;
+  }
+
+  document.getElementById('task-form').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const id = document.getElementById('f-id').value;
+    const payload = {
+      fecha: document.getElementById('f-fecha').value,
+      tecnico: document.getElementById('f-tecnico').value,
+      cliente: document.getElementById('f-cliente').value.trim(),
+      actividad: document.getElementById('f-actividad').value.trim(),
+      estado: document.getElementById('f-estado').value,
+    };
+    if(id){
+      const t = data.tasks.find(x=>x.id===id);
+      Object.assign(t, payload);
+      toast('Tarea actualizada');
+    }else{
+      payload.id = 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+      data.tasks.push(payload);
+      toast('Tarea agregada');
+    }
+    saveData();
+    closeTaskModal();
+    renderHoy(); renderSemana();
+  });
+
+  document.getElementById('btn-delete-task').addEventListener('click', ()=>{
+    const id = document.getElementById('f-id').value;
+    data.tasks = data.tasks.filter(t=>t.id!==id);
+    saveData();
+    closeTaskModal();
+    renderHoy(); renderSemana();
+    toast('Tarea eliminada');
+  });
+  document.getElementById('btn-cancel-task').addEventListener('click', closeTaskModal);
+  document.getElementById('task-overlay').addEventListener('click', (e)=>{
+    if(e.target.id==='task-overlay') closeTaskModal();
+  });
+
+  // Navegación día
+  document.getElementById('day-prev').addEventListener('click', ()=>{ currentDay.setDate(currentDay.getDate()-1); renderHoy(); });
+  document.getElementById('day-next').addEventListener('click', ()=>{ currentDay.setDate(currentDay.getDate()+1); renderHoy(); });
+  document.getElementById('week-prev').addEventListener('click', ()=>{ currentWeekAnchor.setDate(currentWeekAnchor.getDate()-7); renderSemana(); });
+  document.getElementById('week-next').addEventListener('click', ()=>{ currentWeekAnchor.setDate(currentWeekAnchor.getDate()+7); renderSemana(); });
+
+  document.getElementById('btn-add-hoy').addEventListener('click', ()=>openTaskModal(null, fmtDateISO(currentDay)));
+  document.getElementById('btn-add-semana').addEventListener('click', ()=>openTaskModal(null, fmtDateISO(mondayOf(currentWeekAnchor))));
+
+  // Vistas
+  function setView(view){
+    const isHoy = view==='hoy';
+    document.getElementById('view-hoy').style.display = isHoy? 'block':'none';
+    document.getElementById('view-semana').style.display = isHoy? 'none':'block';
+    document.getElementById('tab-hoy').classList.toggle('active', isHoy);
+    document.getElementById('tab-semana').classList.toggle('active', !isHoy);
+    if(isHoy) renderHoy(); else renderSemana();
+  }
+  document.getElementById('tab-hoy').addEventListener('click', ()=>setView('hoy'));
+  document.getElementById('tab-semana').addEventListener('click', ()=>setView('semana'));
+
+  // Técnicos modal
+  function renderTecChips(){
+    document.getElementById('tec-chip-list').innerHTML = data.tecnicos.map(t=>`
+      <div class="tec-chip">
+        <div class="avatar" style="background:${avatarColor(t)}">${initials(t)}</div>
+        ${escapeHtml(t)}
+        <button data-name="${escapeHtml(t)}" class="remove-tec">✕</button>
+      </div>`).join('');
+    document.getElementById('tec-chip-list').querySelectorAll('.remove-tec').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        data.tecnicos = data.tecnicos.filter(t=>t!==btn.dataset.name);
+        saveData();
+        renderTecChips();
+      });
+    });
+  }
+  document.getElementById('btn-settings').addEventListener('click', ()=>{
+    renderTecChips();
+    document.getElementById('tec-overlay').classList.add('open');
+  });
+  document.getElementById('btn-close-tec').addEventListener('click', ()=>{
+    document.getElementById('tec-overlay').classList.remove('open');
+    populateTecnicoSelect(); renderHoy(); renderSemana();
+  });
+  document.getElementById('tec-overlay').addEventListener('click', (e)=>{
+    if(e.target.id==='tec-overlay') document.getElementById('tec-overlay').classList.remove('open');
+  });
+  document.getElementById('btn-add-tec').addEventListener('click', ()=>{
+    const input = document.getElementById('new-tec-name');
+    const name = input.value.trim();
+    if(name && !data.tecnicos.includes(name)){
+      data.tecnicos.push(name);
+      saveData();
+      input.value='';
+      renderTecChips();
+    }
+  });
+
+  // Init
+  (async function init(){
+    await loadData();
+    document.getElementById('loading').style.display='none';
+    document.getElementById('content').style.display='block';
+    populateTecnicoSelect();
+    renderHoy();
+    renderSemana();
+  })();
+})();
+</script>
+</body>
+</html>
