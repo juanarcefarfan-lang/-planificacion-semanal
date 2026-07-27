@@ -487,19 +487,24 @@
 
   async function loadData(){
     try{
-      const res = await window.storage.get(STORAGE_KEY, true);
-      if(res && res.value){
-        const parsed = JSON.parse(res.value);
+      const res = await fetch('/api/board');
+      if(res.ok){
+        const parsed = await res.json();
         if(parsed.tasks) data.tasks = parsed.tasks;
         if(parsed.tecnicos && parsed.tecnicos.length) data.tecnicos = parsed.tecnicos;
       }
     }catch(e){
-      // no existe aún, se usa el default
+      // sin conexión al API todavía, se usan los datos por defecto
     }
   }
   async function saveData(){
     try{
-      await window.storage.set(STORAGE_KEY, JSON.stringify(data), true);
+      const res = await fetch('/api/board', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+      if(!res.ok) throw new Error('save failed');
     }catch(e){
       toast('No se pudo guardar. Intenta de nuevo.');
     }
