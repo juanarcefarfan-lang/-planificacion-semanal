@@ -14,7 +14,7 @@
     --text:#1C2733;
     --text-muted:#66727D;
     --border:#E1E6EB;
-    --pend:#E8A33D;
+    --pend:#D64545;
     --proceso:#2E74B5;
     --term:#3C9D6B;
     --radius:10px;
@@ -141,7 +141,6 @@
     align-items:flex-start;
     border-left:4px solid var(--pend);
   }
-  .card[data-estado="En Proceso"]{border-left-color:var(--proceso);}
   .card[data-estado="Terminado"]{border-left-color:var(--term);}
   .avatar{
     width:34px;height:34px;
@@ -171,16 +170,31 @@
     margin:2px 0 8px;
   }
   .card-footer{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  select.estado-select{
+  .estado-btn{
     font-family:var(--sans);
     font-size:12px;
-    font-weight:600;
+    font-weight:700;
     border-radius:6px;
-    border:1px solid var(--border);
-    padding:4px 8px;
-    background:#fafbfc;
+    border:none;
+    padding:6px 14px;
     cursor:pointer;
+    color:#fff;
   }
+  .estado-btn[data-estado="Pendiente"]{background:var(--pend);}
+  .estado-btn[data-estado="Terminado"]{background:var(--term);}
+  .mini-estado-btn{
+    font-family:var(--sans);
+    font-size:10.5px;
+    font-weight:700;
+    border-radius:5px;
+    border:none;
+    padding:2px 8px;
+    cursor:pointer;
+    color:#fff;
+    flex-shrink:0;
+  }
+  .mini-estado-btn[data-estado="Pendiente"]{background:var(--pend);}
+  .mini-estado-btn[data-estado="Terminado"]{background:var(--term);}
   .icon-btn{
     background:none;border:none;cursor:pointer;
     color:var(--text-muted);
@@ -227,21 +241,27 @@
   }
   .day-col-head b{color:var(--text);font-family:var(--sans);font-size:12.5px;}
   .mini-task{
-    display:flex;
-    gap:6px;
-    align-items:flex-start;
-    padding:6px 4px;
+    padding:8px 8px;
     border-radius:6px;
     font-size:12.5px;
     cursor:pointer;
+    margin-bottom:4px;
+    border:1px solid transparent;
   }
-  .mini-task:hover{background:#F3F6F8;}
-  .mini-dot{
-    width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;
-    background:var(--pend);
+  .mini-task:hover{background:#F3F6F8;border-color:var(--border);}
+  .mini-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:6px;
+    margin-bottom:3px;
   }
-  .mini-task[data-estado="En Proceso"] .mini-dot{background:var(--proceso);}
-  .mini-task[data-estado="Terminado"] .mini-dot{background:var(--term);}
+  .mini-tec-cliente{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mini-actividad{
+    font-size:12px;
+    color:var(--text-muted);
+    line-height:1.35;
+  }
   .mini-empty{
     font-size:12px;color:#A6B0B9;
     padding:6px 4px;
@@ -390,7 +410,6 @@
         <label>Estado</label>
         <select id="f-estado">
           <option>Pendiente</option>
-          <option>En Proceso</option>
           <option>Terminado</option>
         </select>
       </div>
@@ -536,8 +555,9 @@
     list.innerHTML = tasks.map(t=>taskCardHtml(t)).join('');
     list.querySelectorAll('.card').forEach(card=>{
       card.querySelector('.icon-btn.edit').addEventListener('click', ()=>openTaskModal(card.dataset.id));
-      card.querySelector('.estado-select').addEventListener('change', (e)=>{
-        updateEstado(card.dataset.id, e.target.value);
+      card.querySelector('.estado-btn').addEventListener('click', (e)=>{
+        const nuevo = e.target.dataset.estado === 'Pendiente' ? 'Terminado' : 'Pendiente';
+        updateEstado(card.dataset.id, nuevo);
       });
     });
   }
@@ -552,11 +572,7 @@
         </div>
         <div class="actividad">${escapeHtml(t.actividad)}</div>
         <div class="card-footer">
-          <select class="estado-select" data-estado="${t.estado}">
-            <option ${t.estado==='Pendiente'?'selected':''}>Pendiente</option>
-            <option ${t.estado==='En Proceso'?'selected':''}>En Proceso</option>
-            <option ${t.estado==='Terminado'?'selected':''}>Terminado</option>
-          </select>
+          <button class="estado-btn" data-estado="${t.estado}">${t.estado}</button>
           <button class="icon-btn edit">Editar</button>
         </div>
       </div>
@@ -581,8 +597,11 @@
         <div class="day-tasks">
           ${dayTasks.length? dayTasks.map(t=>`
             <div class="mini-task" data-estado="${t.estado}" data-id="${t.id}">
-              <div class="mini-dot"></div>
-              <div><b>${escapeHtml(t.tecnico)}</b> · ${escapeHtml(t.cliente)}</div>
+              <div class="mini-top">
+                <span class="mini-tec-cliente"><b>${escapeHtml(t.tecnico)}</b> · ${escapeHtml(t.cliente)}</span>
+                <button class="mini-estado-btn" data-estado="${t.estado}">${t.estado}</button>
+              </div>
+              <div class="mini-actividad">${escapeHtml(t.actividad)}</div>
             </div>`).join('') : '<div class="mini-empty">Sin tareas</div>'}
         </div>`;
       col.querySelector('.day-col-head').addEventListener('click', ()=>{
@@ -590,9 +609,13 @@
         setView('hoy');
       });
       col.querySelectorAll('.mini-task').forEach(mt=>{
-        mt.addEventListener('click', (e)=>{
-          e.stopPropagation();
+        mt.addEventListener('click', ()=>{
           openTaskModal(mt.dataset.id);
+        });
+        mt.querySelector('.mini-estado-btn').addEventListener('click', (e)=>{
+          e.stopPropagation();
+          const nuevo = e.target.dataset.estado === 'Pendiente' ? 'Terminado' : 'Pendiente';
+          updateEstado(mt.dataset.id, nuevo);
         });
       });
       grid.appendChild(col);
@@ -601,7 +624,7 @@
 
   function updateEstado(id, estado){
     const t = data.tasks.find(x=>x.id===id);
-    if(t){ t.estado = estado; saveData(); renderHoy(); toast('Estado actualizado'); }
+    if(t){ t.estado = estado; saveData(); renderHoy(); renderSemana(); toast('Estado actualizado'); }
   }
 
   function openTaskModal(id, presetDate){
