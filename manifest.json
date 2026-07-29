@@ -1,0 +1,15 @@
+{
+  "name": "Planificación Semanal — Técnicos",
+  "short_name": "Planificación",
+  "description": "Tablero diario y semanal de tareas de técnicos en terreno.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F3F5F7",
+  "theme_color": "#16283D",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
