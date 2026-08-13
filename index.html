@@ -171,8 +171,28 @@
     cursor:pointer;
   }
   .card-mini[data-estado="Terminado"]{border-left-color:var(--term);}
+  .folio-mini{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.4px;
+    color:var(--text-muted);
+    margin-bottom:3px;
+  }
   .cliente-name-mini{font-weight:700;font-size:13px;margin-bottom:3px;}
   .actividad-mini{font-size:12.5px;color:var(--text);line-height:1.4;margin-bottom:8px;}
+  .abrir-ot-btn{
+    display:block;
+    text-align:center;
+    text-decoration:none;
+    background:var(--accent);
+    color:#fff;
+    border-radius:8px;
+    padding:9px;
+    margin-top:8px;
+    font-size:13px;
+    font-weight:600;
+  }
+  .abrir-ot-btn:hover{background:#255f96;}
   .add-mini-btn{
     width:100%;
     background:none;
@@ -312,6 +332,12 @@
     margin-bottom:3px;
   }
   .mini-tec-cliente{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mini-folio{
+    font-family:var(--mono);
+    font-size:10.5px;
+    color:var(--text-muted);
+    margin-bottom:2px;
+  }
   .mini-actividad{
     font-size:12px;
     color:var(--text-muted);
@@ -505,15 +531,10 @@
   const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
   const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
-  let data = { tasks: [
-    {id:'seed_1', fecha:'2026-07-27', tecnico:'Felipe', cliente:'Espacio Urbano', actividad:'Visita técnica en Viña del Mar para revisión en terreno.', estado:'Pendiente'},
-    {id:'seed_2', fecha:'2026-07-27', tecnico:'Sabino', cliente:'Mall Plaza', actividad:'Levantamiento para cotización de piola y soporte de PTZ para carro solar Duoc Plaza Norte.', estado:'Pendiente'},
-    {id:'seed_3', fecha:'2026-07-27', tecnico:'Alain', cliente:'Ripley', actividad:'Etiquetado de cableado en sala de monitoreo Ripley Plaza Sur.', estado:'Pendiente'},
-    {id:'seed_4', fecha:'2026-07-27', tecnico:'Beto', cliente:'Carozzi', actividad:'Lontue-1 CCTV baños nuevos', estado:'Pendiente'},
-    {id:'seed_5', fecha:'2026-07-28', tecnico:'Felipe', cliente:'Espacio Urbano', actividad:'Visita técnica en Los Andes para evaluación en terreno.', estado:'Pendiente'},
-    {id:'seed_6', fecha:'2026-07-28', tecnico:'Sabino', cliente:'Mall Plaza/Ripley', actividad:'Trabajo en las SAM de Plaza Norte / organización de cableado en sala de monitoreo Ripley Plaza Sur.', estado:'Pendiente'},
-    {id:'seed_7', fecha:'2026-07-28', tecnico:'Alain', cliente:'Ripley', actividad:'Finalizar etiquetado e iniciar organización de cableado en sala de monitoreo Ripley Plaza Sur.', estado:'Pendiente'}
-  ], tecnicos: ['Hernán','Felipe','Sabino','Alain','Beto'] };
+  let data = {
+    tasks: [],
+    tecnicos: ['Felipe Yañez','Alain Ramírez','Sabino Aliste','Hernán García']
+  };
   let currentDay = new Date();
   let currentWeekAnchor = new Date();
   let editingId = null;
@@ -614,9 +635,11 @@
         <div class="tech-col-body">
           ${tasks.length? tasks.map(t=>`
             <div class="card-mini" data-id="${t.id}" data-estado="${t.estado}">
+              ${t.folio? `<div class="folio-mini">${escapeHtml(t.folio)}</div>` : ''}
               <div class="cliente-name-mini">${escapeHtml(t.cliente)}</div>
               <div class="actividad-mini">${escapeHtml(t.actividad)}</div>
               <button class="estado-btn" data-estado="${t.estado}">${t.estado}</button>
+              ${t.url? `<a class="abrir-ot-btn" href="${escapeHtml(t.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Abrir OT</a>` : ''}
             </div>`).join('') : '<div class="mini-empty">Sin tareas</div>'}
           <button class="add-mini-btn" data-tecnico="${escapeHtml(tec)}">+ Agregar</button>
         </div>
@@ -656,6 +679,7 @@
         <div class="day-tasks">
           ${dayTasks.length? dayTasks.map(t=>`
             <div class="mini-task" data-estado="${t.estado}" data-id="${t.id}">
+              ${t.folio? `<div class="mini-folio">${escapeHtml(t.folio)}</div>` : ''}
               <div class="mini-top">
                 <span class="mini-tec-cliente"><b>${escapeHtml(t.tecnico)}</b> · ${escapeHtml(t.cliente)}</span>
                 <button class="mini-estado-btn" data-estado="${t.estado}">${t.estado}</button>
