@@ -170,6 +170,7 @@
     margin-bottom:8px;
     cursor:pointer;
   }
+  .card-mini[data-ot="1"]{cursor:default;}
   .card-mini[data-estado="Terminado"]{border-left-color:var(--term);}
   .folio-mini{
     font-family:var(--mono);
@@ -193,6 +194,7 @@
     font-weight:600;
   }
   .abrir-ot-btn:hover{background:#255f96;}
+  .estado-btn[data-ot="1"], .mini-estado-btn[data-ot="1"]{cursor:default;opacity:.85;}
   .add-mini-btn{
     width:100%;
     background:none;
@@ -323,6 +325,7 @@
     margin-bottom:4px;
     border:1px solid transparent;
   }
+  .mini-task[data-ot="1"]{cursor:default;}
   .mini-task:hover{background:#F3F6F8;border-color:var(--border);}
   .mini-top{
     display:flex;
@@ -539,6 +542,10 @@
   let currentWeekAnchor = new Date();
   let editingId = null;
 
+  function esOT(id){
+    return String(id || '').startsWith('ot_');
+  }
+
   function toast(msg){
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -634,11 +641,11 @@
         </div>
         <div class="tech-col-body">
           ${tasks.length? tasks.map(t=>`
-            <div class="card-mini" data-id="${t.id}" data-estado="${t.estado}">
+            <div class="card-mini" data-id="${t.id}" data-estado="${t.estado}" data-ot="${esOT(t.id)?'1':'0'}">
               ${t.folio? `<div class="folio-mini">${escapeHtml(t.folio)}</div>` : ''}
               <div class="cliente-name-mini">${escapeHtml(t.cliente)}</div>
               <div class="actividad-mini">${escapeHtml(t.actividad)}</div>
-              <button class="estado-btn" data-estado="${t.estado}">${t.estado}</button>
+              <button class="estado-btn" data-estado="${t.estado}" data-ot="${esOT(t.id)?'1':'0'}">${t.estado}</button>
               ${t.url? `<a class="abrir-ot-btn" href="${escapeHtml(t.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Abrir OT</a>` : ''}
             </div>`).join('') : '<div class="mini-empty">Sin tareas</div>'}
           <button class="add-mini-btn" data-tecnico="${escapeHtml(tec)}">+ Agregar</button>
@@ -647,9 +654,13 @@
     }).join('');
 
     grid.querySelectorAll('.card-mini').forEach(card=>{
-      card.addEventListener('click', ()=>openTaskModal(card.dataset.id));
+      const bloqueada = esOT(card.dataset.id);
+      if(!bloqueada){
+        card.addEventListener('click', ()=>openTaskModal(card.dataset.id));
+      }
       card.querySelector('.estado-btn').addEventListener('click', (e)=>{
         e.stopPropagation();
+        if(bloqueada){ toast('El estado de una OT se actualiza al cerrarla'); return; }
         const nuevo = e.target.dataset.estado === 'Pendiente' ? 'Terminado' : 'Pendiente';
         updateEstado(card.dataset.id, nuevo);
       });
@@ -678,11 +689,11 @@
         </div>
         <div class="day-tasks">
           ${dayTasks.length? dayTasks.map(t=>`
-            <div class="mini-task" data-estado="${t.estado}" data-id="${t.id}">
+            <div class="mini-task" data-estado="${t.estado}" data-id="${t.id}" data-ot="${esOT(t.id)?'1':'0'}">
               ${t.folio? `<div class="mini-folio">${escapeHtml(t.folio)}</div>` : ''}
               <div class="mini-top">
                 <span class="mini-tec-cliente"><b>${escapeHtml(t.tecnico)}</b> · ${escapeHtml(t.cliente)}</span>
-                <button class="mini-estado-btn" data-estado="${t.estado}">${t.estado}</button>
+                <button class="mini-estado-btn" data-estado="${t.estado}" data-ot="${esOT(t.id)?'1':'0'}">${t.estado}</button>
               </div>
               <div class="mini-actividad">${escapeHtml(t.actividad)}</div>
             </div>`).join('') : '<div class="mini-empty">Sin tareas</div>'}
@@ -692,11 +703,15 @@
         setView('hoy');
       });
       col.querySelectorAll('.mini-task').forEach(mt=>{
-        mt.addEventListener('click', ()=>{
-          openTaskModal(mt.dataset.id);
-        });
+        const bloqueada = esOT(mt.dataset.id);
+        if(!bloqueada){
+          mt.addEventListener('click', ()=>{
+            openTaskModal(mt.dataset.id);
+          });
+        }
         mt.querySelector('.mini-estado-btn').addEventListener('click', (e)=>{
           e.stopPropagation();
+          if(bloqueada){ toast('El estado de una OT se actualiza al cerrarla'); return; }
           const nuevo = e.target.dataset.estado === 'Pendiente' ? 'Terminado' : 'Pendiente';
           updateEstado(mt.dataset.id, nuevo);
         });
@@ -706,11 +721,13 @@
   }
 
   function updateEstado(id, estado){
+    if(esOT(id)) return;
     const t = data.tasks.find(x=>x.id===id);
     if(t){ t.estado = estado; saveData(); renderHoy(); renderSemana(); toast('Estado actualizado'); }
   }
 
   function openTaskModal(id, presetDate, presetTecnico){
+    if(id && esOT(id)) return;
     editingId = id || null;
     populateTecnicoSelect();
     populateClientesList();
@@ -743,6 +760,7 @@
   document.getElementById('task-form').addEventListener('submit', (e)=>{
     e.preventDefault();
     const id = document.getElementById('f-id').value;
+    if(id && esOT(id)){ closeTaskModal(); return; }
     const payload = {
       fecha: document.getElementById('f-fecha').value,
       tecnico: document.getElementById('f-tecnico').value,
@@ -766,6 +784,7 @@
 
   document.getElementById('btn-delete-task').addEventListener('click', ()=>{
     const id = document.getElementById('f-id').value;
+    if(esOT(id)){ closeTaskModal(); return; }
     data.tasks = data.tasks.filter(t=>t.id!==id);
     saveData();
     closeTaskModal();
