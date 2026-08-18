@@ -604,7 +604,7 @@
 
   async function loadData(){
     try{
-      const res = await fetch('/api/board');
+      const res = await fetch('/api/board', {cache:'no-store'});
       if(res.ok){
         const parsed = await res.json();
         if(parsed.tasks) data.tasks = parsed.tasks;
@@ -616,6 +616,18 @@
   }
   async function saveData(){
     try{
+      // Traer el estado del servidor y conservar las OT tal como están allá
+      let otServidor = [];
+      try{
+        const resGet = await fetch('/api/board', {cache:'no-store'});
+        if(resGet.ok){
+          const remoto = await resGet.json();
+          if(Array.isArray(remoto.tasks)) otServidor = remoto.tasks.filter(t=>esOT(t.id));
+        }
+      }catch(e){ /* sin conexión: se guarda lo local */ }
+
+      data.tasks = data.tasks.filter(t=>!esOT(t.id)).concat(otServidor);
+
       const res = await fetch('/api/board', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -662,7 +674,7 @@
               <div class="actividad-mini">${escapeHtml(t.actividad)}</div>
               ${t.descripcion? `<div class="descripcion-mini">${escapeHtml(t.descripcion)}</div>` : ''}
               <button class="estado-btn" data-estado="${t.estado}" data-ot="${esOT(t.id)?'1':'0'}">${t.estado}</button>
-              ${t.url? `<a class="abrir-ot-btn" href="${escapeHtml(t.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Abrir OT</a>` : ''}
+              ${(t.url && t.estado !== 'Terminado')? `<a class="abrir-ot-btn" href="${escapeHtml(t.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Cerrar OT</a>` : ''}
             </div>`).join('') : '<div class="mini-empty">Sin tareas</div>'}
           <button class="add-mini-btn" data-tecnico="${escapeHtml(tec)}">+ Agregar</button>
         </div>
@@ -871,6 +883,16 @@
       renderTecChips();
     }
   });
+
+  // Refresco: al volver a la app y cada 2 minutos
+  async function refrescar(){
+    if(document.querySelector('.overlay.open')) return; // no interrumpir un modal abierto
+    await loadData();
+    renderHoy(); renderSemana();
+  }
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) refrescar(); });
+  window.addEventListener('focus', refrescar);
+  setInterval(refrescar, 120000);
 
   // Init
   (async function init(){
