@@ -1,4 +1,4 @@
-const CACHE_NAME = 'planificacion-semanal-v1';
+const CACHE_NAME = 'planificacion-semanal-v2';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -32,7 +32,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Shell de la app: cache primero, red como respaldo
+  // HTML: red primero, caché solo como respaldo sin conexión
+  const esHTML =
+    event.request.mode === 'navigate' ||
+    url.pathname === '/' ||
+    url.pathname.endsWith('.html');
+
+  if (esHTML) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Estáticos (iconos, manifest): caché primero, red como respaldo
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return cached || fetch(event.request).then((response) => {
