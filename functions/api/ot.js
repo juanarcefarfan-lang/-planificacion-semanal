@@ -23,20 +23,21 @@ export async function onRequestPost(context) {
     const data = stored ? JSON.parse(stored) : { tasks: [], tecnicos: [] };
     if (!Array.isArray(data.tasks)) data.tasks = [];
 
-    // 3. Búsqueda segura: exige que el folio almacenado exista
-    const idx = data.tasks.findIndex(t => t.folio && t.folio === ot.folio);
+    // 3. Búsqueda por id o por folio
+    const idOT = 'ot_' + ot.folio;
+    const idx = data.tasks.findIndex(t => t.id === idOT || (t.folio && t.folio === ot.folio));
 
-    const tarea = {
-      id: 'ot_' + ot.folio,
-      folio: ot.folio,
-      fecha: ot.fecha,
-      tecnico: ot.tecnico,
-      cliente: ot.cliente,
-      actividad: (ot.sitio || '') + (ot.ventana ? ' — ' + ot.ventana : ''),
-      descripcion: ot.descripcion || '',
-      estado: ot.estado || 'Pendiente',
-      url: ot.url || ''
-    };
+    // 4. Solo se escriben los campos que efectivamente llegaron en el payload
+    const tarea = { id: idOT, folio: ot.folio };
+    if (ot.fecha !== undefined) tarea.fecha = ot.fecha;
+    if (ot.tecnico !== undefined) tarea.tecnico = ot.tecnico;
+    if (ot.cliente !== undefined) tarea.cliente = ot.cliente;
+    if (ot.sitio !== undefined || ot.ventana !== undefined) {
+      tarea.actividad = (ot.sitio || '') + (ot.ventana ? ' — ' + ot.ventana : '');
+    }
+    if (ot.descripcion !== undefined) tarea.descripcion = ot.descripcion;
+    if (ot.url !== undefined) tarea.url = ot.url;
+    tarea.estado = ot.estado || (idx >= 0 ? data.tasks[idx].estado : 'Pendiente');
 
     if (idx >= 0) {
       data.tasks[idx] = { ...data.tasks[idx], ...tarea };
@@ -45,6 +46,7 @@ export async function onRequestPost(context) {
     }
 
     await context.env.BOARD_KV.put('board-data', JSON.stringify(data));
+
     return new Response(JSON.stringify({ ok: true, folio: ot.folio }), {
       headers: { 'Content-Type': 'application/json' }
     });
